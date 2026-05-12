@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrack Enterprise — Admin Dashboard</title>
+    <meta name="description" content="AI-Powered Carbon Compliance Dashboard for Enterprise Fleet Management">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=1.1">
+</head>
+<body>
+    <!-- ── Auth Modal Overlay ── -->
+    <div id="auth-overlay" class="auth-overlay">
+        <div id="auth-screen" class="auth-card modal-popup">
+            <div id="auth-form-content">
+                <div class="auth-logo">🌱</div>
+                <h1 class="auth-title">EcoTrack Enterprise</h1>
+                <p class="auth-subtitle">AI-Powered Carbon Compliance Platform</p>
+                
+                <div id="auth-error" class="auth-error hidden"></div>
+                
+                <div class="form-group">
+                    <label for="email">Work Email</label>
+                    <input type="email" id="email" placeholder="admin@company.com" autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+                </div>
+                
+                <button id="signin-btn" class="btn btn-primary">Sign In</button>
+                <button id="signup-btn" class="btn btn-secondary">Create Account</button>
+            </div>
+
+            <!-- Success Tick Overlay -->
+            <div id="auth-success" class="auth-success hidden">
+                <div class="tick-icon">✓</div>
+                <h3>Access Granted</h3>
+                <p>Welcome to EcoTrack Fleet Management</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Main Dashboard ── -->
+    <div id="dashboard-screen" class="dashboard hidden">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <span class="logo-icon">🌱</span>
+                <span class="logo-text">EcoTrack</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-tab="overview" onclick="switchTab('overview', this)">
+                    <span class="nav-icon">📊</span> Overview
+                </a>
+                <a href="#" class="nav-item" data-tab="activities" onclick="switchTab('activities', this)">
+                    <span class="nav-icon">🚗</span> Activities
+                </a>
+                <a href="#" class="nav-item" data-tab="reports" onclick="switchTab('reports', this)">
+                    <span class="nav-icon">📋</span> Reports
+                </a>
+                <a href="#" class="nav-item" data-tab="settings" onclick="switchTab('settings', this)">
+                    <span class="nav-icon">⚙️</span> Settings
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-signout" onclick="handleSignOut()">🚪 Sign Out</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <div>
+                    <h2 id="page-title" class="page-title">Overview</h2>
+                    <p class="page-subtitle">Real-time carbon compliance monitoring</p>
+                </div>
+                <div class="top-bar-actions">
+                    <button id="simulate-btn" class="btn btn-secondary" style="margin-right: 1rem; padding: 0.5rem 1rem;">🚀 Simulate Fleet Activity</button>
+                    <span class="status-badge online">● Cloud Connected</span>
+                    <span id="user-email" class="user-email"></span>
+                </div>
+            </header>
+
+            <!-- Overview Tab -->
+            <section id="tab-overview" class="tab-content">
+                <!-- Summary Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card stat-primary">
+                        <div class="stat-icon">🌍</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-co2">0.00</span>
+                            <span class="stat-label">Total CO₂ (kg)</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-green">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-activities">0</span>
+                            <span class="stat-label">Activities Tracked</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-blue">
+                        <div class="stat-icon">🚗</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="top-mode">—</span>
+                            <span class="stat-label">Top Transport Mode</span>
+                        </div>
+                    </div>
+                    <div class="stat-card stat-amber">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-info">
+                            <span class="stat-value" id="avg-speed">0.0</span>
+                            <span class="stat-label">Avg Speed (m/s)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode Breakdown -->
+                <div class="card">
+                    <h3 class="card-title">Transport Mode Breakdown</h3>
+                    <div id="mode-breakdown" class="mode-grid">
+                        <p class="empty-state">Loading data from Supabase...</p>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="card">
+                    <h3 class="card-title">Recent Activities</h3>
+                    <div id="recent-activities" class="activity-list">
+                        <p class="empty-state">No activities recorded yet. AI is monitoring...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Activities Tab -->
+            <section id="tab-activities" class="tab-content hidden">
+                <div class="card">
+                    <h3 class="card-title">All Transport Activities</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mode</th>
+                                <th>Duration</th>
+                                <th>Avg Speed</th>
+                                <th>CO₂ Emitted</th>
+                                <th>Verified</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activities-table-body">
+                            <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Reports Tab -->
+            <section id="tab-reports" class="tab-content hidden">
+                <div class="card">
+                    <h3 class="card-title">Sustainability Reports</h3>
+                    <div id="reports-list">
+                        <p class="empty-state">No audit-ready reports generated yet. Reports are generated monthly.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Tab -->
+            <section id="tab-settings" class="tab-content hidden">
+                <div class="card">
+                    <h3 class="card-title">Subscription</h3>
+                    <div class="settings-grid">
+                        <div class="setting-row">
+                            <span class="setting-label">Plan</span>
+                            <span class="setting-value highlight">Enterprise Trial</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Credits</span>
+                            <span class="setting-value">500 / 500</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Backend</span>
+                            <span class="setting-value">Supabase (JWT Auth + Postgrest)</span>
+                        </div>
+                        <div class="setting-row">
+                            <span class="setting-label">Sync Status</span>
+                            <span class="setting-value highlight">Cloud Connected ✓</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 class="card-title">About</h3>
+                    <p>EcoTrack Enterprise v1.0</p>
+                    <p class="text-muted">AI-Powered Carbon Compliance Platform</p>
+                    <p class="text-muted">Passive sensor fusion · Offline-first · Audit-ready reports</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js?v=1.1"></script>
+</body>
+</html>
