@@ -37,6 +37,21 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private var onPermissionResult: (() -> Unit)? = null
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[android.Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[android.Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        
+        if (fineLocationGranted || coarseLocationGranted) {
+            startTrackingService()
+        }
+        onPermissionResult?.invoke()
+    }
+
     override fun onCreate(saved: Bundle?) {
         super.onCreate(saved)
 
@@ -51,9 +66,9 @@ class MainActivity : ComponentActivity() {
                     composable("auth") {
                         AuthScreen(
                             onAuthenticated = {
-                                // Start tracking immediately
-                                startTrackingService()
-                                navController.navigate("role_selection")
+                                checkPermissionsAndStartService {
+                                    navController.navigate("role_selection")
+                                }
                             }
                         )
                     }
@@ -92,6 +107,25 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun checkPermissionsAndStartService(onComplete: () -> Unit) {
+        onPermissionResult = onComplete
+        val permissions = mutableListOf(
+            android.Manifest.permission.ACCESS_FINE_LOCATION,
+            android.Manifest.permission.ACCESS_COARSE_LOCATION,
+            android.Manifest.permission.ACTIVITY_RECOGNITION
+        )
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            permissions.add(android.Manifest.permission.FOREGROUND_SERVICE_LOCATION)
+        }
+
+        requestPermissionLauncher.launch(permissions.toTypedArray())
     }
 
     private fun startTrackingService() {

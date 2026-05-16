@@ -36,11 +36,12 @@ class AuthViewModel @Inject constructor(
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val success = authRepository.signIn(email, password)
-            _uiState.value = if (success) {
+            val result = authRepository.signIn(email, password)
+            _uiState.value = if (result.isSuccess) {
                 _uiState.value.copy(isLoading = false, isAuthenticated = true)
             } else {
-                _uiState.value.copy(isLoading = false, error = "Invalid credentials")
+                val msg = result.exceptionOrNull()?.message ?: "Invalid credentials"
+                _uiState.value.copy(isLoading = false, error = msg)
             }
         }
     }
@@ -48,11 +49,12 @@ class AuthViewModel @Inject constructor(
     fun signUp(email: String, password: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            val success = authRepository.signUp(email, password)
-            _uiState.value = if (success) {
+            val result = authRepository.signUp(email, password)
+            _uiState.value = if (result.isSuccess) {
                 _uiState.value.copy(isLoading = false, isAuthenticated = true)
             } else {
-                _uiState.value.copy(isLoading = false, error = "Sign up failed. Try again.")
+                val msg = result.exceptionOrNull()?.message ?: "Sign up failed"
+                _uiState.value.copy(isLoading = false, error = msg)
             }
         }
     }

@@ -39,7 +39,9 @@ data class ActivityEntity(
     @kotlinx.serialization.SerialName("co2kgemitted") val co2KgEmitted: Float,
     @kotlinx.serialization.SerialName("companyid") val companyId: String,
     @kotlinx.serialization.SerialName("isauditverified") val isAuditVerified: Boolean = false,
-    @kotlinx.serialization.SerialName("user_id") val user_id: String? = null // New field to match SQL
+    @kotlinx.serialization.SerialName("user_id") val user_id: String? = null,
+    @kotlinx.serialization.SerialName("issynced") val isSynced: Boolean = false,
+    @kotlinx.serialization.SerialName("syncpriority") val syncPriority: String = "LOW" // "HIGH" or "LOW"
 )
 
 @Serializable

@@ -15,8 +15,7 @@ class EcoTrackApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        // Schedule periodic cloud sync (every 15 min)
-        DataSyncWorker.schedule(this)
+        // No immediate schedule here to avoid factory race conditions
     }
 
     override val workManagerConfiguration: Configuration

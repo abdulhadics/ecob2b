@@ -121,7 +121,7 @@ async function simulateFleetActivity() {
     console.log('Simulating Fleet Activity...');
     const mockActivity = {
         id: crypto.randomUUID(),
-        transportmode: 'TRUCK_HEAVY_VEHICLE',
+        transportmode: 'HEAVY_VEHICLE',
         starttimestampms: Date.now() - 3600000,
         endtimestampms: Date.now(),
         distancemeters: 15400.5,
@@ -190,6 +190,8 @@ function switchTab(tabId, element) {
         loadDashboardData();
     } else if (tabId === 'reports') {
         loadReports();
+    } else if (tabId === 'research') {
+        console.log('DAA Verification Tab Active');
     }
 }
 
@@ -331,12 +333,10 @@ function updateActivitiesTable(activities) {
 // ── Helpers ──
 function getModeEmoji(mode) {
     const map = {
-        'STATIONARY': '🧍',
+        'IDLE': '🧍',
         'WALKING': '🚶',
-        'CYCLING': '🚲',
-        'PUBLIC_TRANSIT': '🚌',
-        'CAR': '🚗',
-        'TRUCK_HEAVY_VEHICLE': '🚛'
+        'TRANSIT': '🚌',
+        'HEAVY_VEHICLE': '🚛'
     };
     return map[mode] || '📍';
 }

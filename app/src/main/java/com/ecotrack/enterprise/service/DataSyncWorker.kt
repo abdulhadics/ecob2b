@@ -10,9 +10,15 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.ecotrack.enterprise.data.repository.ActivityRepository
 import com.ecotrack.enterprise.data.repository.ReportRepository
+import com.ecotrack.enterprise.data.local.dao.ActivityDao
+import com.ecotrack.enterprise.service.SyncSchedulerService
+import com.ecotrack.enterprise.service.SyncPacket
+import com.ecotrack.enterprise.service.SyncPriority
+import com.ecotrack.enterprise.service.VectorClock
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 
 /*
  * ╔══════════════════════════════════════════════════════════════╗
@@ -29,18 +35,31 @@ import java.util.concurrent.TimeUnit
 class DataSyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
-    private val activityRepository: ActivityRepository,
-    private val reportRepository: ReportRepository
+    private val activityDao: ActivityDao,
+    private val syncScheduler: SyncSchedulerService
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result {
         return try {
-            Log.d(TAG, "Starting periodic data sync to Supabase...")
+            Log.d(TAG, "Fetching pending activities for EDF scheduling...")
+            val pending = activityDao.getPendingActivities()
+            
+            for (activity in pending) {
+                val packet = SyncPacket(
+                    id = activity.id,
+                    timestampMs = activity.startTimestampMs,
+                    sizeBytes = 256, // Average activity JSON size
+                    priority = if (activity.syncPriority == "HIGH") SyncPriority.HIGH else SyncPriority.LOW,
+                    ttlMs = 7200000, // 2 hour default TTL
+                    vectorClock = VectorClock()
+                )
+                syncScheduler.addPacket(packet)
+            }
 
-            // Sync all pending activities from Room → Supabase
-            activityRepository.syncPendingActivities()
+            Log.d(TAG, "Executing Sync via Scheduler Engine...")
+            syncScheduler.executeSync(isWifiStable = true) // In production, use NetworkMonitor
 
-            Log.d(TAG, "Data sync completed successfully.")
+            Log.d(TAG, "Data sync completed via EDF strategy.")
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "Data sync failed, will retry.", e)

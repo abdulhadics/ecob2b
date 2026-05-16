@@ -10,29 +10,29 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val supabaseClient: SupabaseClient
 ) {
-    suspend fun signIn(email: String, password: String): Boolean {
+    suspend fun signIn(email: String, password: String): Result<Unit> {
         return try {
             supabaseClient.auth.signInWith(Email) {
                 this.email = email
                 this.password = password
             }
-            true
+            Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            Result.failure(e)
         }
     }
 
-    suspend fun signUp(email: String, password: String): Boolean {
+    suspend fun signUp(email: String, password: String): Result<Unit> {
         return try {
             supabaseClient.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
             }
-            true
+            Result.success(Unit)
         } catch (e: Exception) {
             e.printStackTrace()
-            false
+            Result.failure(e)
         }
     }
 

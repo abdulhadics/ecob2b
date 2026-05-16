@@ -2,6 +2,7 @@ package com.ecotrack.enterprise.domain.usecase
 
 import com.ecotrack.enterprise.domain.model.TransportActivity
 import com.ecotrack.enterprise.domain.model.TransportMode
+import com.ecotrack.enterprise.domain.model.DefraEmissionFactors
 import javax.inject.Inject
 
 /*
@@ -27,12 +28,10 @@ class CalculateCarbonFootprintUseCase @Inject constructor() {
 
     companion object {
         private val EMISSION_FACTORS: Map<TransportMode, Float> = mapOf(
-            TransportMode.STATIONARY         to 0.000f,
-            TransportMode.WALKING            to 0.000f,
-            TransportMode.CYCLING            to 0.000f,
-            TransportMode.PUBLIC_TRANSIT     to 0.089f,
-            TransportMode.CAR               to 0.170f,
-            TransportMode.TRUCK_HEAVY_VEHICLE to 0.950f
+            TransportMode.IDLE          to DefraEmissionFactors.WALKING_CYCLING.toFloat(),
+            TransportMode.WALKING       to DefraEmissionFactors.WALKING_CYCLING.toFloat(),
+            TransportMode.TRANSIT       to ((DefraEmissionFactors.TRANSIT_BUS + DefraEmissionFactors.CAR_PETROL) / 2).toFloat(),
+            TransportMode.HEAVY_VEHICLE to DefraEmissionFactors.HEAVY_GOODS_VEHICLE.toFloat()
         )
     }
 

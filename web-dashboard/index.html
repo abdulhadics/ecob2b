@@ -60,6 +60,9 @@
                 <a href="#" class="nav-item" data-tab="reports" onclick="switchTab('reports', this)">
                     <span class="nav-icon">📋</span> Reports
                 </a>
+                <a href="#" class="nav-item" data-tab="research" onclick="switchTab('research', this)">
+                    <span class="nav-icon">🧬</span> Research
+                </a>
                 <a href="#" class="nav-item" data-tab="settings" onclick="switchTab('settings', this)">
                     <span class="nav-icon">⚙️</span> Settings
                 </a>
@@ -162,6 +165,37 @@
                     <h3 class="card-title">Sustainability Reports</h3>
                     <div id="reports-list">
                         <p class="empty-state">No audit-ready reports generated yet. Reports are generated monthly.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Research Tab -->
+            <section id="tab-research" class="tab-content hidden">
+                <div class="card">
+                    <h3 class="card-title">Algorithmic Complexity & Integrity</h3>
+                    <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr);">
+                        <div class="stat-card" style="background: #1e1e1e;">
+                            <div class="stat-info">
+                                <span class="stat-value" style="font-size: 1.2rem;">O(1)</span>
+                                <span class="stat-label">Tracking Complexity</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="background: #1e1e1e;">
+                            <div class="stat-info">
+                                <span class="stat-value" style="font-size: 1.2rem;">O((V+E) log V)</span>
+                                <span class="stat-label">Routing Complexity</span>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="background: #1e1e1e;">
+                            <div class="stat-info">
+                                <span class="stat-value" style="font-size: 1.2rem;">O(N log N)</span>
+                                <span class="stat-label">Sync Complexity</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top: 1rem; border: 1px solid #333;">
+                        <h4 style="margin-bottom: 0.5rem; color: #10b981;">DAA Verification Report</h4>
+                        <p style="font-size: 0.9rem; line-height: 1.6;">Our core engines utilize amortized analysis to ensure zero processing lag during fleet peak hours. The <strong>TrackingEngine</strong> achieves strict O(1) updates via an incrementally updated Frequency HashMap, while the <strong>EcoRouteOptimizer</strong> guarantees optimality using an admissible Haversine heuristic.</p>
                     </div>
                 </div>
             </section>

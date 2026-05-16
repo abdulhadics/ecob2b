@@ -6,6 +6,7 @@ import com.ecotrack.enterprise.data.local.entity.ActivityEntity
 import com.ecotrack.enterprise.data.local.entity.ReportEntity
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.gotrue.auth
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -38,12 +39,13 @@ class ActivityRepository @Inject constructor(
         // Step 1: Always save to local Room (offline-first)
         activityDao.insertActivity(activity)
 
-        // Step 2: Try to push to Supabase cloud
+        // Step 2: Try to push to Supabase cloud ONLY if user is logged in
         try {
-            supabaseClient.postgrest["transport_activities"].insert(activity)
+            if (supabaseClient.auth.currentSessionOrNull() != null) {
+                supabaseClient.postgrest["transport_activities"].insert(activity)
+            }
         } catch (e: Exception) {
-            // Network failure — data is safe in Room
-            // Will be synced on next SyncWorker run
+            // Network failure or guest mode — data is safe in Room
             e.printStackTrace()
         }
     }
@@ -68,7 +70,9 @@ class ReportRepository @Inject constructor(
         reportDao.insertReport(report)
 
         try {
-            supabaseClient.postgrest["sustainability_reports"].insert(report)
+            if (supabaseClient.auth.currentSessionOrNull() != null) {
+                supabaseClient.postgrest["sustainability_reports"].insert(report)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

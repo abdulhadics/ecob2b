@@ -25,6 +25,12 @@ interface ActivityDao {
 
     @Query("SELECT * FROM transport_activities WHERE companyId = :companyId")
     fun getActivitiesForCompany(companyId: String): Flow<List<ActivityEntity>>
+
+    @Query("SELECT * FROM transport_activities WHERE isSynced = 0")
+    suspend fun getPendingActivities(): List<ActivityEntity>
+
+    @Query("UPDATE transport_activities SET isSynced = 1 WHERE id = :id")
+    suspend fun markActivityAsSynced(id: String)
 }
 
 @Dao

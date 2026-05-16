@@ -67,12 +67,12 @@ class PytorchTransportClassifier @Inject constructor(
 
             // 4. Map index to TransportMode
             when (maxIndex) {
-                0 -> TransportMode.STATIONARY
+                0 -> TransportMode.IDLE
                 1 -> TransportMode.WALKING
-                2 -> TransportMode.CYCLING
-                3 -> TransportMode.PUBLIC_TRANSIT
-                4 -> TransportMode.CAR
-                5 -> TransportMode.TRUCK_HEAVY_VEHICLE
+                2 -> TransportMode.TRANSIT
+                3 -> TransportMode.TRANSIT
+                4 -> TransportMode.TRANSIT
+                5 -> TransportMode.HEAVY_VEHICLE
                 else -> fallbackLogic(snapshot)
             }
         } catch (e: Exception) {
@@ -87,16 +87,16 @@ class PytorchTransportClassifier @Inject constructor(
     private fun fallbackLogic(snapshot: SensorSnapshot): TransportMode {
         return when {
             snapshot.gpsSpeedMps < 0.5f && snapshot.accelVariance < 0.1f ->
-                TransportMode.STATIONARY
+                TransportMode.IDLE
             snapshot.gpsSpeedMps < 2.0f && snapshot.accelVariance in 0.1f..0.8f ->
                 TransportMode.WALKING
             snapshot.gpsSpeedMps < 7.0f && snapshot.accelVariance in 0.4f..1.5f ->
-                TransportMode.CYCLING
+                TransportMode.TRANSIT
             snapshot.gpsSpeedMps < 15.0f ->
-                TransportMode.PUBLIC_TRANSIT
+                TransportMode.TRANSIT
             snapshot.accelVariance < 0.3f ->
-                TransportMode.CAR
-            else -> TransportMode.TRUCK_HEAVY_VEHICLE
+                TransportMode.TRANSIT
+            else -> TransportMode.HEAVY_VEHICLE
         }
     }
 }

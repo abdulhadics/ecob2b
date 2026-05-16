@@ -1,5 +1,7 @@
 package com.ecotrack.enterprise.service
 
+import java.util.UUID
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -46,7 +48,9 @@ class BackgroundAgentService : Service() {
 
     @Inject lateinit var sensorFusionEngine: SensorFusionEngine
     @Inject lateinit var classifyTransportMode: ClassifyTransportModeUseCase
+    @Inject lateinit var trackingEngine: TrackingEngine
     @Inject lateinit var calculateCarbon: CalculateCarbonFootprintUseCase
+    @Inject lateinit var syncScheduler: SyncSchedulerService
     @Inject lateinit var activityDao: ActivityDao
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -55,7 +59,15 @@ class BackgroundAgentService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTIFICATION_ID, buildPersistentNotification())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIFICATION_ID, 
+                buildPersistentNotification(),
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, buildPersistentNotification())
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -69,8 +81,19 @@ class BackgroundAgentService : Service() {
         serviceScope.launch {
             sensorFusionEngine.sensorDataFlow
                 .buffer(capacity = 64)
-                .map { snapshot -> classifyTransportMode(snapshot) }
-                .distinctUntilChanged()
+                .map { snapshot -> 
+                    val rawActivity = classifyTransportMode(snapshot)
+                    val reading = com.ecotrack.enterprise.domain.model.SensorReading(
+                        timestamp = snapshot.timestamp,
+                        gpsSpeedMps = snapshot.gpsSpeedMps,
+                        gpsLat = snapshot.gpsLat,
+                        gpsLon = snapshot.gpsLon,
+                        accelVariance = snapshot.accelVariance,
+                        mode = rawActivity.mode
+                    )
+                    trackingEngine.processReading(reading)
+                }
+                .distinctUntilChanged { old, new -> old.mode == new.mode }
                 .collect { activity ->
                     val emission = calculateCarbon(activity)
                     
@@ -84,6 +107,24 @@ class BackgroundAgentService : Service() {
                         companyId = "company_123"
                     )
                     activityDao.insertActivity(entity)
+
+                    // Enqueue for cloud synchronization
+                    syncScheduler.enqueue(
+                        SyncPacket(
+                            id = UUID.randomUUID().toString(),
+                            timestampMs = entity.endTimestampMs,
+                            sizeBytes = 1024, // Approx packet size
+                            priority = if (activity.mode == com.ecotrack.enterprise.domain.model.TransportMode.HEAVY_VEHICLE) 
+                                SyncPriority.HIGH else SyncPriority.LOW,
+                            ttlMs = 3600000, // 1 hour TTL
+                            logicalTimestamp = com.ecotrack.enterprise.service.VectorClock().apply { 
+                                increment("device_001") 
+                            }
+                        )
+                    )
+                    
+                    // Periodically trigger processing (in real app, this is handled by WorkManager)
+                    syncScheduler.processSyncQueue(isWifiStable = true)
                 }
         }
     }
