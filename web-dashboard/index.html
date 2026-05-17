@@ -7,7 +7,9 @@
     <meta name="description" content="AI-Powered Carbon Compliance Dashboard for Enterprise Fleet Management">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=1.1">
+    <link rel="stylesheet" href="styles.css?v=1.3">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
     <!-- ── Auth Modal Overlay ── -->
@@ -31,6 +33,15 @@
                 
                 <button id="signin-btn" class="btn btn-primary">Sign In</button>
                 <button id="signup-btn" class="btn btn-secondary">Create Account</button>
+                
+                <div style="margin: 15px 0; text-align: center; color: #888; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px;">Or continue with</div>
+                
+                <button id="oauth-google-btn" class="btn" style="background: white; color: #333; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 10px;">
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google Logo" style="width: 18px; height: 18px;">
+                    Sign in with Google
+                </button>
+
+                <button id="guest-btn" class="btn btn-secondary" style="background: #374151; color: white;">Continue as Guest</button>
             </div>
 
             <!-- Success Tick Overlay -->
@@ -38,6 +49,48 @@
                 <div class="tick-icon">✓</div>
                 <h3>Access Granted</h3>
                 <p>Welcome to EcoTrack Fleet Management</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Entry Modal -->
+    <div id="map-modal-overlay" class="auth-overlay hidden">
+        <div class="auth-card modal-popup" style="max-width: 600px; width: 100%;">
+            <h3 style="margin-top: 0; color: white;">Add Custom Fleet Activity</h3>
+            <p style="color: #888; font-size: 0.9em; margin-bottom: 15px;">Click on the map to set a Start and End point.</p>
+            
+            <div id="map" style="height: 300px; background: #eee; border-radius: 8px; margin-bottom: 15px; position: relative; z-index: 1;"></div>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <div style="flex: 1;">
+                    <label style="display:block; font-size: 0.85em; color: #888; margin-bottom: 5px;">Start Point</label>
+                    <input type="text" id="map-start-text" disabled placeholder="Click map..." style="width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px;">
+                </div>
+                <div style="flex: 1;">
+                    <label style="display:block; font-size: 0.85em; color: #888; margin-bottom: 5px;">End Point</label>
+                    <input type="text" id="map-end-text" disabled placeholder="Click map..." style="width: 100%; padding: 8px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px;">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 15px;">
+                <label style="color: #888;">Transport Mode</label>
+                <select id="map-transport-mode" style="width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: white; border-radius: 4px; margin-top: 5px;">
+                    <option value="WALKING">Walking</option>
+                    <option value="BICYCLING">Bicycling</option>
+                    <option value="TRANSIT">Public Transit</option>
+                    <option value="DRIVING">Driving (Car)</option>
+                    <option value="HEAVY_VEHICLE">Heavy Vehicle (Truck)</option>
+                </select>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                <div style="font-size: 0.9em; color: #ccc;">
+                    <strong>Distance:</strong> <span id="map-distance">0.00</span> km
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="closeMapModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitMapActivity()">Analyze & Send</button>
+                </div>
             </div>
         </div>
     </div>
@@ -81,7 +134,7 @@
                     <p class="page-subtitle">Real-time carbon compliance monitoring</p>
                 </div>
                 <div class="top-bar-actions">
-                    <button id="simulate-btn" class="btn btn-secondary" style="margin-right: 1rem; padding: 0.5rem 1rem;">🚀 Simulate Fleet Activity</button>
+                    <button id="simulate-btn" class="btn btn-secondary" style="margin-right: 1rem; padding: 0.5rem 1rem;">📍 Custom Map Entry</button>
                     <span class="status-badge online">● Cloud Connected</span>
                     <span id="user-email" class="user-email"></span>
                 </div>
@@ -95,7 +148,7 @@
                         <div class="stat-icon">🌍</div>
                         <div class="stat-info">
                             <span class="stat-value" id="total-co2">0.00</span>
-                            <span class="stat-label">Total CO₂ (kg)</span>
+                            <span class="stat-label">Total CO₂ Saved (kg)</span>
                         </div>
                     </div>
                     <div class="stat-card stat-green">
@@ -113,10 +166,10 @@
                         </div>
                     </div>
                     <div class="stat-card stat-amber">
-                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-icon">⭐</div>
                         <div class="stat-info">
-                            <span class="stat-value" id="avg-speed">0.0</span>
-                            <span class="stat-label">Avg Speed (m/s)</span>
+                            <span class="stat-value" id="total-points">0</span>
+                            <span class="stat-label">Total Points</span>
                         </div>
                     </div>
                 </div>
@@ -146,10 +199,10 @@
                         <thead>
                             <tr>
                                 <th>Mode</th>
-                                <th>Duration</th>
-                                <th>Avg Speed</th>
-                                <th>CO₂ Emitted</th>
-                                <th>Verified</th>
+                                <th>Distance (km)</th>
+                                <th>Points</th>
+                                <th>CO₂ Saved</th>
+                                <th>Date</th>
                             </tr>
                         </thead>
                         <tbody id="activities-table-body">
@@ -162,7 +215,10 @@
             <!-- Reports Tab -->
             <section id="tab-reports" class="tab-content hidden">
                 <div class="card">
-                    <h3 class="card-title">Sustainability Reports</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 class="card-title">Sustainability Reports</h3>
+                        <button class="btn btn-primary" onclick="generateReport()" style="padding: 0.5rem 1rem;">📄 Generate Report</button>
+                    </div>
                     <div id="reports-list">
                         <p class="empty-state">No audit-ready reports generated yet. Reports are generated monthly.</p>
                     </div>
@@ -234,6 +290,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=1.1"></script>
+    <script src="app.js?v=1.7"></script>
 </body>
 </html>
